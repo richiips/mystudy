@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { apiUrl } from '../lib/api'
 import ChapterView from '../components/ChapterView'
 
 interface Question {
@@ -39,7 +40,7 @@ export default function CourseDetail() {
     const fetchCourse = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        const res = await fetch(`/api/courses/${id}`, {
+        const res = await fetch(apiUrl(`/api/courses/${id}`), {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },

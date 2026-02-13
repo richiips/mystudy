@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { apiUrl } from '../lib/api'
 import CourseCard from '../components/CourseCard'
 
 interface Course {
@@ -20,7 +21,7 @@ export default function Dashboard() {
     const fetchCourses = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        const res = await fetch('/api/courses', {
+        const res = await fetch(apiUrl('/api/courses'), {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },

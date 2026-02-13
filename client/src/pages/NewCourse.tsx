@@ -1,6 +1,7 @@
 import { useState, FormEvent, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { apiUrl } from '../lib/api'
 
 type SourceTab = 'pdf' | 'article' | 'video'
 
@@ -58,7 +59,7 @@ export default function NewCourse() {
         formData.append('file', file!)
         formData.append('sourceType', 'pdf')
 
-        res = await fetch('/api/generation', {
+        res = await fetch(apiUrl('/api/generation'), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,7 +67,7 @@ export default function NewCourse() {
           body: formData,
         })
       } else {
-        res = await fetch('/api/generation', {
+        res = await fetch(apiUrl('/api/generation'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
