@@ -80,6 +80,7 @@ async function processCourse(
   url?: string
 ): Promise<void> {
   // Step 1: Extract text based on source type
+  console.log(`[${courseId}] Paso 1: Extrayendo texto (${sourceType})...`);
   let extractedText: string;
 
   switch (sourceType) {
@@ -96,9 +97,12 @@ async function processCourse(
       extractedText = await extractTranscript(url);
       break;
   }
+  console.log(`[${courseId}] Texto extraído: ${extractedText.length} caracteres`);
 
   // Step 2: Generate course structure with AI
+  console.log(`[${courseId}] Paso 2: Generando estructura del curso con IA...`);
   const courseStructure = await generateCourseStructure(extractedText);
+  console.log(`[${courseId}] Estructura generada: "${courseStructure.title}" (${courseStructure.chapters.length} capítulos)`);
 
   // Step 3: Update course title
   await supabase
@@ -109,13 +113,23 @@ async function processCourse(
   // Step 4: Process each chapter sequentially
   for (let i = 0; i < courseStructure.chapters.length; i++) {
     const chapter = courseStructure.chapters[i];
+    console.log(`[${courseId}] Paso 4.${i + 1}: Procesando capítulo "${chapter.title}"...`);
 
-    // Generate summary, questions, and audio for each chapter
-    const [summary, questions, audioUrl] = await Promise.all([
+    // Generate summary and questions in parallel, audio separately (can fail)
+    const [summary, questions] = await Promise.all([
       generateSummary(chapter.title, chapter.content),
       generateQuestions(chapter.title, chapter.content),
-      generateAudio(chapter.content.slice(0, 4096), courseId, i),
     ]);
+    console.log(`[${courseId}] Capítulo ${i + 1}: resumen y preguntas generados`);
+
+    // Audio is optional - don't fail the whole course if TTS fails
+    let audioUrl: string | null = null;
+    try {
+      audioUrl = await generateAudio(summary.slice(0, 4096), courseId, i);
+      console.log(`[${courseId}] Capítulo ${i + 1}: audio generado`);
+    } catch (audioErr) {
+      console.error(`[${courseId}] Capítulo ${i + 1}: error generando audio (continuando sin audio):`, audioErr);
+    }
 
     // Insert chapter
     const { data: chapterData, error: chapterError } = await supabase
@@ -152,6 +166,7 @@ async function processCourse(
         throw new Error(`Error al insertar preguntas: ${questionsError.message}`);
       }
     }
+    console.log(`[${courseId}] Capítulo ${i + 1} completado`);
   }
 
   // Step 5: Update course status to ready
@@ -159,6 +174,7 @@ async function processCourse(
     .from('courses')
     .update({ status: 'ready' })
     .eq('id', courseId);
+  console.log(`[${courseId}] Curso completado!`);
 }
 
 export default router;
